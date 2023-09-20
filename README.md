@@ -1,4 +1,4 @@
-# Napelem backend
+# Bolti koltes backend
 
 ## Getting Started
 
