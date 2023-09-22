@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 var mssql = require('mssql');
 const dotenv = require('dotenv');
-let result = dotenv.config();
+dotenv.config();
 
 const config = {
     user: process.env.DB_USER,
@@ -16,10 +16,17 @@ const config = {
         trustServerCertificate: true,
     },
 };
-mssql.connect(config, function (err) {
-    if (err) throw err;
-    console.log('Connection with Database established');
-});
+
+const connect = async () => {
+    try {
+        await mssql.connect(config);
+        console.log('Connection with Database established');
+    } catch (err) {
+        console.log(err);
+    }
+};
+
+connect();
 
 const productRoutes = require('./api/routes/products');
 
