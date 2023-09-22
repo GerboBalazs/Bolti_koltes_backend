@@ -5,7 +5,10 @@
         "es2021": true
     },
     "extends": "eslint:recommended",
+    "parser": "babel-eslint",
     "parserOptions": {
+        "sourceType": "module",
+        "allowImportExportEverywhere": true,
         "ecmaVersion": "latest"
     },
     "rules": {

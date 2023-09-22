@@ -2,31 +2,18 @@ const express = require('express');
 const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
-var mssql = require('mssql');
-const dotenv = require('dotenv');
-dotenv.config();
+const sql = require('./sql');
 
-const config = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    server: process.env.DB_HOST || '',
-    database: process.env.DB_NAME,
-    port: parseInt(process.env.DB_PORT || '', 10),
-    options: {
-        trustServerCertificate: true,
-    },
-};
+// const connect = async () => {
+//     try {
+//         await mssql.connect(config);
+//         console.log('Connection with Database established');
+//     } catch (err) {
+//         console.log(err);
+//     }
+// };
 
-const connect = async () => {
-    try {
-        await mssql.connect(config);
-        console.log('Connection with Database established');
-    } catch (err) {
-        console.log(err);
-    }
-};
-
-connect();
+sql.initialConnection();
 
 const productRoutes = require('./api/routes/products');
 
