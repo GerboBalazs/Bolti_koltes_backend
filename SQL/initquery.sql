@@ -1,4 +1,4 @@
-CREATE TABLE MainCategory(
+﻿CREATE TABLE MainCategory(
 	MainCategoryID int primary key,
 	CategoryName varchar(100)
 )
@@ -66,13 +66,17 @@ CREATE TABLE History(
 
 --test product
 INSERT INTO MainCategory(MainCategoryID,CategoryName)
-VALUES(1,'Drinks')
+VALUES(1,'Italok')
 INSERT INTO SubCategory(SubCategoryID,CategoryName)
-VALUES(1,'Soft Drinks')
+VALUES(1,'Üdítőitalok')
 INSERT INTO Products (Barcode, MainCategoryID, SubCategoryID, Name, ImageLink)
-VALUES (5449000025173, 1, 1, 'Coca-Cola Cola Flavoured Carbonated Soft Drink 2,25 l', 'https://secure.ce-tescoassets.com/assets/HU/173/5449000025173/ShotType1_225x225.jpg')
+VALUES (5449000025173, 1, 1, 'Coca-Cola 2,25 l', 'https://secure.ce-tescoassets.com/assets/HU/173/5449000025173/ShotType1_225x225.jpg')
+INSERT INTO Shop(ShopID, ShopName)
+VALUES (1, 'Tesco')
+INSERT INTO Price (Barcode, ShopID, Price, Discount, PerWeight)
+VALUES(5449000025173, 1, 769, 0, 0)
 
-SELECT * FROM Products
+SELECT * FROM Products prod JOIN Price on prod.Barcode = Price.Barcode
 
 /*
 DROP TABLE Favourites
