@@ -15,7 +15,7 @@ const sql = require('./sql');
 
 sql.initialConnection();
 
-const productRoutes = require('./api/routes/products');
+const Routes = require('./api/routes/routes');
 
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -33,9 +33,9 @@ app.use((req, res, next) => {
 });
 
 //Routes which should handles requests
-app.use('/products', productRoutes);
+app.use('/', Routes);
 
-//Handles errors
+//Handles errors if endpoint is not exsisting
 app.use((req, res, next) => {
     const error = new Error('Not found');
     error.status = 404;
@@ -48,7 +48,9 @@ app.use((error, req, res, next) => {
     res.json({
         error: {
             message: error.message,
+            status: error.status,
         },
     });
+    next();
 });
 module.exports = app;
