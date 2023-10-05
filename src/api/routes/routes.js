@@ -18,7 +18,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getProducts(req, res);
+        controller.getProduct(req, res);
     }
 );
 

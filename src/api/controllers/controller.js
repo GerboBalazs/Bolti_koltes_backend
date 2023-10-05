@@ -1,18 +1,16 @@
 const sql = require('../../sql');
 
 module.exports = {
-    getProducts: (req, res) => {
-        const id = req.params.productID;
-        // console.log(req.ip);
-        if (id == 'special') {
+    getProduct: async (req, res) => {
+        try {
+            const product = (await sql.runQuery(`SELECT * FROM Products WHERE barcode=${req.params.productID}`)).recordset;
             res.status(200).json({
-                message: 'You discovered a special ID',
-                id: id,
+                Barcode: product[0].Barcode,
+                Name: product[0].Name,
+                ImageLink: product[0].ImageLink,
             });
-        } else {
-            res.status(200).json({
-                message: 'You passed an ID',
-            });
+        } catch (err) {
+            res.status(400).json({ msg: err });
         }
     },
     prodProba: async (req, res) => {
