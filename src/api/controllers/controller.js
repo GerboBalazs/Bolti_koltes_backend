@@ -3,11 +3,16 @@ const sql = require('../../sql');
 module.exports = {
     getProduct: async (req, res) => {
         try {
-            const product = (await sql.runQuery(`SELECT * FROM Products WHERE barcode=${req.params.productID}`)).recordset;
+            const product = (
+                await sql.runQuery(
+                    `SELECT p.*, pr.Price FROM Products p JOIN Price pr ON p.Barcode=pr.Barcode WHERE p.Barcode=${req.params.productID}`
+                )
+            ).recordset;
             res.status(200).json({
                 Barcode: product[0].Barcode,
                 Name: product[0].Name,
                 ImageLink: product[0].ImageLink,
+                Price: product[0].Price,
             });
         } catch (err) {
             res.status(400).json({ msg: err });
