@@ -5,7 +5,7 @@ module.exports = {
         try {
             const product = (
                 await sql.runQuery(
-                    `SELECT p.*, pr.Price FROM Products p JOIN Price pr ON p.Barcode=pr.Barcode WHERE p.Barcode=${req.params.productID}`
+                    `SELECT p.*, d.Price FROM Products p JOIN Details d ON p.Barcode=d.Barcode WHERE p.Barcode=${req.params.productID}`
                 )
             ).recordset;
             res.status(200).json({
@@ -23,5 +23,13 @@ module.exports = {
         res.status(200).json({
             barcode: prod.recordset[0].Barcode,
         });
+    },
+    getShops: async (req, res) => {
+        try {
+            const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
+            res.status(200).json(JSON.parse(JSON.stringify(shops)));
+        } catch (err) {
+            res.status(404).json({ msg: err });
+        }
     },
 };
