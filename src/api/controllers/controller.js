@@ -5,14 +5,27 @@ module.exports = {
         try {
             const product = (
                 await sql.runQuery(
-                    `SELECT p.*, d.Price FROM Products p JOIN Details d ON p.Barcode=d.Barcode WHERE p.Barcode=${req.params.productID}`
+                    `SELECT p.Barcode, p.ImageLink,p.Name, d.Price, d.Discount, s.ShopName, s.ShopID FROM Products p
+                     JOIN Details d ON p.Barcode=d.Barcode JOIN Shop s ON d.ShopID=s.ShopID WHERE d.Barcode=${req.params.productID}`
                 )
             ).recordset;
+            const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
+            let prices = [];
+            let availableShops = [];
+            for (let element of product) {
+                prices.push({ [element.ShopName]: element.Price });
+                availableShops.push(element.ShopName);
+            }
+            for (let shop of shops) {
+                if (!availableShops.includes(shop.ShopName)) {
+                    prices.push({ [shop.ShopName]: 0 });
+                }
+            }
             res.status(200).json({
                 Barcode: product[0].Barcode,
                 Name: product[0].Name,
                 ImageLink: product[0].ImageLink,
-                Price: product[0].Price,
+                Price: prices,
             });
         } catch (err) {
             res.status(400).json({ msg: err });
