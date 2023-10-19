@@ -13,12 +13,12 @@ module.exports = {
             let prices = [];
             let availableShops = [];
             for (let element of product) {
-                prices.push({ ShopName: element.ShopName, Price: element.Price, ShopID: element.ShopID });
+                prices.push({ ShopName: element.ShopName, Price: element.Price, ShopID: element.ShopID, Discount: element.Discount });
                 availableShops.push(element.ShopName);
             }
             for (let shop of shops) {
                 if (!availableShops.includes(shop.ShopName)) {
-                    prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID });
+                    prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 });
                 }
             }
             res.status(200).json({
