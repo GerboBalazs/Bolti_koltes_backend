@@ -20,6 +20,7 @@ router.get(
         controller.getShops(req, res);
     }
 );
+
 router.get(
     '/:productID',
     (req, res, next) => {
@@ -29,5 +30,13 @@ router.get(
         controller.getProduct(req, res);
     }
 );
-
+router.post(
+    '/login',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.authenticate(req, res);
+    }
+);
 module.exports = router;
