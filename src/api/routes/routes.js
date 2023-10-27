@@ -1,7 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/controller');
-
+router.post(
+    '/register',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.registration(req, res);
+    }
+);
 router.get(
     '/proba',
     (req, res, next) => {

@@ -17,6 +17,11 @@ async function authorize(req, res) {
         return resolv(true);
     });
 }
+
+//To decode the token
+async function parseJwt(token) {
+    return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+}
 module.exports = {
     //To authenticate the user
     authenticate: async (req, res) => {
@@ -27,13 +32,38 @@ module.exports = {
                 if (result.recordset[0].Password !== createHash('sha256').update(req.body.password).digest('hex')) {
                     return res.status(401).send({ msg: 'Email or password is incorrect!' });
                 }
-                const accessToken = jwt.sign({ email: result.recordset[0].Email }, process.env.ACCESS_TOKEN_SECRET, {
-                    algorithm: 'HS256',
-                    expiresIn: '1d',
-                });
+                const accessToken = jwt.sign(
+                    { email: result.recordset[0].Email, userId: result.recordset[0].UserID },
+                    process.env.ACCESS_TOKEN_SECRET,
+                    {
+                        algorithm: 'HS256',
+                        expiresIn: '1d',
+                    }
+                );
                 res.status(200).json({ accessToken: accessToken });
             })
             .catch((err) => res.status(400).send({ msg: err }));
+    },
+    //To register new users
+    registration: async (req, res) => {
+        try {
+            //If a user is existing with this email, then not allowed to register again
+            await sql.runQuery(`SELECT * FROM Users WHERE Email = '${req.body.email}'`).then((result) => {
+                //Check if the email is free
+                if (result.rowsAffected == 0) {
+                    sql.runQuery(
+                        `INSERT INTO Users(Email,Password,DisplayName) VALUES('${req.body.email}','${createHash('sha256')
+                            .update(req.body.password)
+                            .digest('hex')}','${req.body.username}')`
+                    );
+                    res.status(200).send({ msg: 'Successful register' });
+                } else {
+                    res.status(409).send({ msg: 'Email has been already registered!' });
+                }
+            });
+        } catch (err) {
+            res.status(400).send({ msg: err });
+        }
     },
     //To get products by barcode
     getProduct: async (req, res) => {
