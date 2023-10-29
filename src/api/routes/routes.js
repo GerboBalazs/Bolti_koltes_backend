@@ -47,4 +47,7 @@ router.post(
         controller.authenticate(req, res);
     }
 );
+router.post('/token', (req, res) => {
+    controller.refreshToken(req, res);
+});
 module.exports = router;

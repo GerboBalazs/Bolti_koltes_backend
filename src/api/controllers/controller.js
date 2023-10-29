@@ -17,16 +17,32 @@ async function authorize(req, res) {
         return resolv(true);
     });
 }
+//To generate token
+function generateAccessToken(user) {
+    return jwt.sign({ email: user.email, userId: user.userId }, process.env.ACCESS_TOKEN_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: '1h',
+    });
+}
+//To generate refresh tokens
+function generateRefreshToken(user) {
+    const refreshToken = jwt.sign({ email: user.email, userId: user.userId }, process.env.REFRESH_TOKEN_SECRET, {
+        algorithm: 'HS256',
+        expiresIn: '14d',
+    });
+    sql.runQuery(`INSERT INTO Token VALUES('${refreshToken}')`);
+    return refreshToken;
+}
 
 //To decode the token
-async function parseJwt(token) {
+function parseJwt(token) {
     return JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
 }
 module.exports = {
-    //To authenticate the user
+    //To authenticate the user with normal token
     authenticate: async (req, res) => {
+        //Check if the email is already exsisting
         await sql
-            //Check if the email is already exsisting
             .runQuery(`SELECT * FROM Users WHERE Email ='${req.body.email}'`)
             .then((result) => {
                 if (result.rowsAffected[0] == 0) return res.status(401).send({ msg: 'Email or password is incorrect!' });
@@ -34,16 +50,11 @@ module.exports = {
                 if (result.recordset[0].Password !== createHash('sha256').update(req.body.password).digest('hex')) {
                     return res.status(401).send({ msg: 'Email or password is incorrect!' });
                 }
+                const user = { email: result.recordset[0].Email, userId: result.recordset[0].UserID };
                 //If OK, then create token
-                const accessToken = jwt.sign(
-                    { email: result.recordset[0].Email, userId: result.recordset[0].UserID },
-                    process.env.ACCESS_TOKEN_SECRET,
-                    {
-                        algorithm: 'HS256',
-                        expiresIn: '1d',
-                    }
-                );
-                res.status(200).json({ accessToken: accessToken });
+                const accessToken = generateAccessToken(user);
+                const refreshToken = generateRefreshToken(user);
+                res.status(200).json({ accessToken: accessToken, refreshToken: refreshToken });
             })
             .catch((err) => res.status(400).send({ msg: err }));
     },
@@ -63,6 +74,26 @@ module.exports = {
                 } else {
                     res.status(409).send({ msg: 'Email has been already registered!' });
                 }
+            });
+        } catch (err) {
+            res.status(400).send({ msg: err });
+        }
+    },
+    refreshToken: async (req, res) => {
+        try {
+            const refreshToken = req.body.refreshToken;
+            if (refreshToken == null) return res.sendStatus(401);
+            await sql.runQuery(`SELECT * FROM Token WHERE RefreshToken LIKE '${refreshToken}'`).then((result) => {
+                if (result.rowsAffected == 0) return res.sendStatus(401);
+                jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+                    if (err) {
+                        sql.runQuery(`DELETE FROM Token WHERE RefreshToken LIKE '${refreshToken}'`);
+                        return res.sendStatus(403);
+                    } else {
+                        const accessToken = generateAccessToken(user);
+                        res.status(200).json({ accessToken: accessToken });
+                    }
+                });
             });
         } catch (err) {
             res.status(400).send({ msg: err });
