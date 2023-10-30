@@ -181,4 +181,39 @@ module.exports = {
             res.status(404).json({ msg: err });
         }
     },
+    getList: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                const list = (await sql.runQuery(`SELECT * FROM List WHERE UserID = ${userID}`)).recordset;
+                res.status(200).json(JSON.parse(JSON.stringify(list)));
+            }
+        } catch (err) {
+            res.status(404).json({ msg: err });
+        }
+    },
+    toggleInCart: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                const barcode = req.body.barcode;
+                //get current inCart and flip it
+                console.log(barcode, userID);
+                let inCartValue = (await sql.runQuery(`SELECT InCart FROM List WHERE Barcode = ${barcode} AND UserID = ${userID}`)).recordset[0].InCart;
+                inCartValue = !inCartValue;
+                //convert bool to 1 or 0
+                //nemtom miért boolt ad vissza az sql ha csak 1/0-t fogad el
+                inCartValue = inCartValue ? 1 : 0;
+                
+                await sql.runQuery(`UPDATE List SET InCart = ${inCartValue} WHERE Barcode = ${barcode} AND UserID = ${userID}`);
+                res.status(200).json({ msg: "InCart value toggled successfully" });
+            }
+        } catch (err) {
+            res.status(404).json({ msg: err });
+        }
+    },
 };

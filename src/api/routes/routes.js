@@ -28,6 +28,9 @@ router.get(
         controller.getShops(req, res);
     }
 );
+router.get('/list', (req, res) => {
+    controller.getList(req, res);
+});
 
 router.get(
     '/:productID',
@@ -52,6 +55,9 @@ router.post('/token', (req, res) => {
 });
 router.post('/list', (req, res) => {
     controller.addToList(req, res);
+});
+router.post('/list/toggleInCart', (req, res) => {
+    controller.toggleInCart(req, res);
 });
 
 module.exports = router;
