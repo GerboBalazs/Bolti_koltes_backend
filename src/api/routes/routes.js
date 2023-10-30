@@ -50,4 +50,8 @@ router.post(
 router.post('/token', (req, res) => {
     controller.refreshToken(req, res);
 });
+router.post('/list', (req, res) => {
+    controller.addToList(req, res);
+});
+
 module.exports = router;

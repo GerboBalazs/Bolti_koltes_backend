@@ -152,4 +152,35 @@ module.exports = {
             res.status(404).json({ msg: err });
         }
     },
+    //Add product to list
+    addToList: async (req,res) => {
+        try{
+            //get userid
+            /*
+            const token = req.header('authorization');
+            const userID = parseJwt(token);
+            console.log(userID);
+            */
+            const userID = 1;
+
+            //check if userid/product already in list
+            const result = await sql.runQuery(`SELECT * FROM List WHERE UserID = '${userID}' AND Barcode = '${req.body.barcode}'`);
+
+            if (result.rowsAffected == 0) {
+                await sql.runQuery(`INSERT INTO List(UserID, Barcode, Quantity, InCart, CurrentPrice, ShopID) 
+                    VALUES('${userID}', '${req.body.barcode}', '${req.body.quantity}', '${req.body.incart}', '${req.body.currentprice}', '${req.body.shopid}')`);
+                res.status(200).json({ msg: 'Product added to the list successfully'});
+            } else {
+                //if it already exists, update the quantity
+                const newQuantity = result.recordset[0].Quantity + req.body.quantity;
+                await sql.runQuery(`UPDATE List SET Quantity = '${newQuantity}' WHERE UserID = '${userID}' AND Barcode = '${req.body.barcode}'`);
+                res.status(200).json({ msg: 'Product updated successfully'});
+            }
+
+        } catch(err) {
+            res.status(404).json({ msg: err });
+        }
+    
+    },
+
 };
