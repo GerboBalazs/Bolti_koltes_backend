@@ -50,14 +50,32 @@ router.post(
         controller.authenticate(req, res);
     }
 );
-router.post('/token', (req, res) => {
-    controller.refreshToken(req, res);
-});
-router.post('/list', (req, res) => {
-    controller.addToList(req, res);
-});
-router.post('/list/toggleInCart', (req, res) => {
-    controller.toggleInCart(req, res);
-});
+router.post(
+    '/token',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.refreshToken(req, res);
+    }
+);
+router.post(
+    '/list',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.addToList(req, res);
+    }
+);
+router.post(
+    '/list/toggleInCart',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.toggleInCart(req, res);
+    }
+);
 
 module.exports = router;
