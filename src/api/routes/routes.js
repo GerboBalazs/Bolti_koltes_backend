@@ -28,9 +28,15 @@ router.get(
         controller.getShops(req, res);
     }
 );
-router.get('/list', (req, res) => {
-    controller.getList(req, res);
-});
+router.get(
+    '/list',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getList(req, res);
+    }
+);
 
 router.get(
     '/:productID',
@@ -50,6 +56,15 @@ router.post(
         controller.authenticate(req, res);
     }
 );
+router.delete(
+    '/logout',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.logout(req, res);
+    }
+);
 router.post(
     '/token',
     (req, res, next) => {
@@ -57,6 +72,15 @@ router.post(
     },
     (req, res) => {
         controller.refreshToken(req, res);
+    }
+);
+router.post(
+    '/modifyProduct',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.modifyProductInList(req, res);
     }
 );
 router.post(
@@ -68,6 +92,7 @@ router.post(
         controller.addToList(req, res);
     }
 );
+
 router.post(
     '/list/toggleInCart',
     (req, res, next) => {

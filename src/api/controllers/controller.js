@@ -101,38 +101,36 @@ module.exports = {
     },
     //To get products by barcode
     getProduct: async (req, res) => {
-        if ((await authorize(req, res)) === true) {
-            try {
-                //Get the right product
-                const product = (
-                    await sql.runQuery(
-                        `SELECT p.Barcode, p.ImageLink,p.Name, d.Price, d.Discount, s.ShopName, s.ShopID FROM Products p
+        try {
+            //Get the right product
+            const product = (
+                await sql.runQuery(
+                    `SELECT p.Barcode, p.ImageLink,p.Name, d.Price, d.Discount, s.ShopName, s.ShopID FROM Products p
                      JOIN Details d ON p.Barcode=d.Barcode JOIN Shop s ON d.ShopID=s.ShopID WHERE d.Barcode=${req.params.productID}`
-                    )
-                ).recordset;
-                const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
-                let prices = [];
-                let availableShops = [];
-                //If the product is exsisting in more than one store
-                for (let element of product) {
-                    prices.push({ ShopName: element.ShopName, Price: element.Price, ShopID: element.ShopID, Discount: element.Discount });
-                    availableShops.push(element.ShopName);
-                }
-                //Set price and discount to 0 in unavailable shops
-                for (let shop of shops) {
-                    if (!availableShops.includes(shop.ShopName)) {
-                        prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 });
-                    }
-                }
-                res.status(200).json({
-                    Barcode: product[0].Barcode,
-                    Name: product[0].Name,
-                    ImageLink: product[0].ImageLink,
-                    Price: prices,
-                });
-            } catch (err) {
-                res.status(400).json({ msg: 'Product not found' });
+                )
+            ).recordset;
+            const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
+            let prices = [];
+            let availableShops = [];
+            //If the product is exsisting in more than one store
+            for (let element of product) {
+                prices.push({ ShopName: element.ShopName, Price: element.Price, ShopID: element.ShopID, Discount: element.Discount });
+                availableShops.push(element.ShopName);
             }
+            //Set price and discount to 0 in unavailable shops
+            for (let shop of shops) {
+                if (!availableShops.includes(shop.ShopName)) {
+                    prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 });
+                }
+            }
+            res.status(200).json({
+                Barcode: product[0].Barcode,
+                Name: product[0].Name,
+                ImageLink: product[0].ImageLink,
+                Price: prices,
+            });
+        } catch (err) {
+            res.status(400).json({ msg: 'Product not found' });
         }
     },
     prodProba: async (req, res) => {
@@ -149,10 +147,10 @@ module.exports = {
             const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
             res.status(200).json(JSON.parse(JSON.stringify(shops)));
         } catch (err) {
-            res.status(404).json({ msg: err });
+            res.status(400).json({ msg: err });
         }
     },
-    //Add product to list
+    //Add product to list or cart
     addToList: async (req, res) => {
         try {
             //get userid
@@ -162,23 +160,43 @@ module.exports = {
                 const userID = parseJwt(token).userId;
 
                 //check if userid/product already in list
-                const result = await sql.runQuery(`SELECT * FROM List WHERE UserID = '${userID}' AND Barcode = '${req.body.barcode}'`);
+                const result = await sql.runQuery(`SELECT * FROM List WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
 
                 if (result.rowsAffected == 0) {
                     await sql.runQuery(`INSERT INTO List(UserID, Barcode, Quantity, InCart, CurrentPrice, ShopID) 
-                    VALUES('${userID}', '${req.body.barcode}', '${req.body.quantity}', '${req.body.incart}', '${req.body.currentprice}', '${req.body.shopid}')`);
+                    VALUES('${userID}', '${req.body.Barcode}', '${req.body.Quantity}', '${req.body.InCart}', '${req.body.CurrentPrice}', '${req.body.ShopID}')`);
                     res.status(200).json({ msg: 'Product added to the list successfully' });
                 } else {
                     //if it already exists, update the list
-                    // const newQuantity = result.recordset[0].Quantity + req.body.quantity;
                     await sql.runQuery(
-                        `UPDATE List SET Quantity = '${req.body.quantity}' , InCart ='${req.body.incart}' , CurrentPrice ='${req.body.currentprice}', ShopID ='${req.body.shopid}' WHERE UserID = '${userID}' AND Barcode = '${req.body.barcode}'`
+                        `UPDATE List SET Quantity = Quantity + '${req.body.Quantity}' , InCart ='${req.body.InCart}' , CurrentPrice ='${req.body.CurrentPrice}', ShopID ='${req.body.ShopID}' WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`
                     );
                     res.status(200).json({ msg: 'Product updated on the list successfully' });
                 }
             }
         } catch (err) {
-            res.status(404).json({ msg: err });
+            res.status(400).json({ msg: err });
+        }
+    },
+    //This endpoint is for update all information about the product on the list or cart
+    modifyProductInList: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                const result = await sql.runQuery(`SELECT * FROM List WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+                if (result.rowsAffected == 0) {
+                    res.status(400).json({ msg: 'User does not have the product on the list' });
+                } else {
+                    await sql.runQuery(
+                        `UPDATE List SET Quantity = '${req.body.Quantity}' , InCart ='${req.body.InCart}' , CurrentPrice ='${req.body.CurrentPrice}', ShopID ='${req.body.ShopID}' WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`
+                    );
+                    res.status(200).json({ msg: 'Product updated on the list successfully' });
+                }
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
         }
     },
     getList: async (req, res) => {
@@ -191,7 +209,7 @@ module.exports = {
                 res.status(200).json(JSON.parse(JSON.stringify(list)));
             }
         } catch (err) {
-            res.status(404).json({ msg: err });
+            res.status(400).json({ msg: err });
         }
     },
     toggleInCart: async (req, res) => {
@@ -200,20 +218,34 @@ module.exports = {
                 const authHeader = req.headers['authorization'];
                 const token = authHeader && authHeader.split(' ')[1];
                 const userID = parseJwt(token).userId;
-                const barcode = req.body.barcode;
                 //get current inCart and flip it
-                console.log(barcode, userID);
-                let inCartValue = (await sql.runQuery(`SELECT InCart FROM List WHERE Barcode = ${barcode} AND UserID = ${userID}`)).recordset[0].InCart;
+                let inCartValue = (await sql.runQuery(`SELECT InCart FROM List WHERE Barcode = ${req.body.Barcode} AND UserID = ${userID}`))
+                    .recordset[0].InCart;
                 inCartValue = !inCartValue;
                 //convert bool to 1 or 0
                 //nemtom miért boolt ad vissza az sql ha csak 1/0-t fogad el
                 inCartValue = inCartValue ? 1 : 0;
-                
-                await sql.runQuery(`UPDATE List SET InCart = ${inCartValue} WHERE Barcode = ${barcode} AND UserID = ${userID}`);
-                res.status(200).json({ msg: "InCart value toggled successfully" });
+
+                await sql.runQuery(`UPDATE List SET InCart = ${inCartValue} WHERE Barcode = ${req.body.Barcode} AND UserID = ${userID}`);
+                res.status(200).json({ msg: 'InCart value toggled successfully' });
             }
         } catch (err) {
-            res.status(404).json({ msg: err });
+            res.status(400).json({ msg: err });
+        }
+    },
+    logout: async (req, res) => {
+        try {
+            //Check if refresh token exsisting in the database
+            const result = await sql.runQuery(`SELECT * FROM Token WHERE RefreshToken LIKE '${req.body.refreshToken}'`);
+            if (result.rowsAffected != 0) {
+                await sql.runQuery(`DELETE FROM Token WHERE RefreshToken LIKE '${req.body.refreshToken}'`);
+                res.sendStatus(200);
+            } else {
+                //If token does not exsising just send 200, logout is already solved
+                res.sendStatus(200);
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
         }
     },
 };
