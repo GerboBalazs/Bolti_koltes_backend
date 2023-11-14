@@ -7,7 +7,7 @@ async function authorize(req, res) {
     return new Promise(function (resolv) {
         const authHeader = req.headers['authorization'];
         const token = authHeader && authHeader.split(' ')[1];
-        if (token == null) return res.sendStatus(401);
+        if (token == null || token == 'null') return res.sendStatus(401);
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err) => {
             if (err) {
                 res.status(403).send({ msg: 'Token is invalid!' });
@@ -193,6 +193,25 @@ module.exports = {
                         `UPDATE List SET Quantity = '${req.body.Quantity}' , InCart ='${req.body.InCart}' , CurrentPrice ='${req.body.CurrentPrice}', ShopID ='${req.body.ShopID}' WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`
                     );
                     res.status(200).json({ msg: 'Product updated on the list successfully' });
+                }
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+    //This endpoint is for remove product from list or cart
+    removeFromList: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                const result = await sql.runQuery(`SELECT * FROM List WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+                if (result.rowsAffected == 0) {
+                    res.status(400).json({ msg: 'User does not have the product on the list' });
+                } else {
+                    await sql.runQuery(`DELETE FROM List WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+                    res.status(200).json({ msg: 'Product deleted from the list successfully' });
                 }
             }
         } catch (err) {

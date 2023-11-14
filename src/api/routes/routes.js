@@ -75,7 +75,7 @@ router.post(
     }
 );
 router.post(
-    '/modifyProduct',
+    '/list/modify',
     (req, res, next) => {
         next();
     },
@@ -84,7 +84,7 @@ router.post(
     }
 );
 router.post(
-    '/list',
+    '/list/add',
     (req, res, next) => {
         next();
     },
@@ -100,6 +100,15 @@ router.post(
     },
     (req, res) => {
         controller.toggleInCart(req, res);
+    }
+);
+router.delete(
+    '/list/remove',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.removeFromList(req, res);
     }
 );
 
