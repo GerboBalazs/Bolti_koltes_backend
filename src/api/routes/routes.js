@@ -111,5 +111,24 @@ router.delete(
         controller.removeFromList(req, res);
     }
 );
+router.post(
+    '/favourites/add',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.addToFavourites(req, res);
+    }
+);
+router.delete(
+    '/favourites/remove',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.removeFromFavourites(req, res);
+    }
+);
+
 
 module.exports = router;

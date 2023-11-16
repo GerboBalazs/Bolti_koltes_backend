@@ -267,4 +267,47 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+
+    addToFavourites: async (req, res) => {
+        try {
+            //get userid
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+
+                //check if userid/product already favourited
+                const result = await sql.runQuery(`SELECT * FROM Favourites WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+
+                if (result.rowsAffected == 0) {
+                    await sql.runQuery(`INSERT INTO Favourites(UserID, Barcode) 
+                    VALUES('${userID}', '${req.body.Barcode}')`);
+                    res.status(200).json({ msg: 'Product added to favourites successfully' });
+                }
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+    removeFromFavourites: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+
+                //check if there is anything to delete
+                const result = await sql.runQuery(`SELECT * FROM Favourites WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+                if (result.rowsAffected == 0) {
+                    res.status(400).json({ msg: 'User does not have the product favourited' });
+                } else {
+                    await sql.runQuery(`DELETE FROM Favourites WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+                    res.status(200).json({ msg: 'Product removed from favourites successfully' });
+                }
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+
 };
