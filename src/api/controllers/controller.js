@@ -333,16 +333,19 @@ module.exports = {
                     let availableShops = [];
                     let details =(
                         await sql.runQuery(
-                            `SELECT * FROM Details WHERE Barcode=${favourite.Barcode[1]}`
+                            `SELECT * FROM Details d JOIN Shop s on d.ShopID=s.ShopID WHERE d.Barcode=${favourite.Barcode[1]}`
                         )
                     ).recordset;
                     
                     //add available shops
                     for (let detail of details){
-                        prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID, Discount: detail.Discount })
+                        console.log(detail);
+                        prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID[1], Discount: detail.Discount })
                         availableShops.push(detail.ShopName);
                     }
                     //add unavailable shops with price 0
+                    console.log(availableShops);
+                    console.log(prices);
                     for (let shop of shops){
                         if (!availableShops.includes(shop.ShopName)) {
                             prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 })
