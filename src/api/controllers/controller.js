@@ -339,13 +339,10 @@ module.exports = {
                     
                     //add available shops
                     for (let detail of details){
-                        console.log(detail);
                         prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID[1], Discount: detail.Discount })
                         availableShops.push(detail.ShopName);
                     }
                     //add unavailable shops with price 0
-                    console.log(availableShops);
-                    console.log(prices);
                     for (let shop of shops){
                         if (!availableShops.includes(shop.ShopName)) {
                             prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 })
@@ -360,7 +357,6 @@ module.exports = {
                     });
                     
                 }
-                console.log("testtest")
                 res.status(200).json(results);
          }
         } catch (err) {
