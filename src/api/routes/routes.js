@@ -37,6 +37,15 @@ router.get(
         controller.getList(req, res);
     }
 );
+router.get(
+    '/favourites',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getFavourites(req, res);
+    }
+);
 
 router.get(
     '/:productID',

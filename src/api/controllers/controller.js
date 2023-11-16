@@ -310,4 +310,60 @@ module.exports = {
         }
     },
 
+
+    getFavourites: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+
+                //Get favorites
+                const favourites = (
+                    await sql.runQuery(
+                        `SELECT * FROM Favourites f JOIN Products p ON f.Barcode=p.Barcode WHERE f.UserID=${userID}`
+                    )
+                ).recordset;
+                const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
+
+                let results = [];
+                for (let favourite of favourites){
+
+                    let prices = [];
+                    let availableShops = [];
+                    let details =(
+                        await sql.runQuery(
+                            `SELECT * FROM Details WHERE Barcode=${favourite.Barcode[1]}`
+                        )
+                    ).recordset;
+                    
+                    //add available shops
+                    for (let detail of details){
+                        prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID, Discount: detail.Discount })
+                        availableShops.push(detail.ShopName);
+                    }
+                    //add unavailable shops with price 0
+                    for (let shop of shops){
+                        if (!availableShops.includes(shop.ShopName)) {
+                            prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 })
+                        }
+                    }
+                    //add everything to final list
+                    results.push({
+                        Barcode: favourite.Barcode[1],
+                        Name: favourite.Name,
+                        ImageLink: favourite.ImageLink,
+                        Price: prices
+                    });
+                    
+                }
+                console.log("testtest")
+                res.status(200).json(results);
+         }
+        } catch (err) {
+            console.log(err);
+            res.status(400).json({ msg: err });
+        }
+    },
+
 };
