@@ -17,6 +17,21 @@ async function authorize(req, res) {
         return resolv(true);
     });
 }
+async function isLoggedIn(req) {
+    return new Promise(function (resolv) {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        if (token == null || token == 'null') return resolv(false);
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err) => {
+            if (err) {
+                //res.status(403).send({ msg: 'Token is invalid!' });
+                return resolv(false);
+            }
+        });
+        return resolv(true);
+    });
+}
+
 //To generate token
 function generateAccessToken(user) {
     return jwt.sign({ email: user.email, userId: user.userId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -106,7 +121,7 @@ module.exports = {
             const product = (
                 await sql.runQuery(
                     `SELECT p.Barcode, p.ImageLink,p.Name, d.Price, d.Discount, s.ShopName, s.ShopID FROM Products p
-                     JOIN Details d ON p.Barcode=d.Barcode JOIN Shop s ON d.ShopID=s.ShopID WHERE d.Barcode=${req.params.productID}`
+                        JOIN Details d ON p.Barcode=d.Barcode JOIN Shop s ON d.ShopID=s.ShopID WHERE d.Barcode=${req.params.productID}`
                 )
             ).recordset;
             const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
@@ -123,22 +138,42 @@ module.exports = {
                     prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 });
                 }
             }
-            res.status(200).json({
-                Barcode: product[0].Barcode,
-                Name: product[0].Name,
-                ImageLink: product[0].ImageLink,
-                Price: prices,
-            });
+
+            let results;
+
+            //check if product is favourited
+            if (await isLoggedIn(req)) {
+                if (await authorize(req, res)) {
+                    const authHeader = req.headers['authorization'];
+                    const token = authHeader && authHeader.split(' ')[1];
+                    const userID = parseJwt(token).userId;
+
+                    let favourited = true;
+                    const result = await sql.runQuery(`SELECT * FROM Favourites WHERE Barcode=${req.params.productID} AND UserID=${userID}`);
+                    if (result.rowsAffected == 0) {
+                        favourited = false;
+                    }
+                    results = {
+                        Barcode: product[0].Barcode,
+                        Name: product[0].Name,
+                        ImageLink: product[0].ImageLink,
+                        Favourite: favourited,
+                        Price: prices,
+                    };
+                }
+            } else {
+                results = {
+                    Barcode: product[0].Barcode,
+                    Name: product[0].Name,
+                    ImageLink: product[0].ImageLink,
+                    Price: prices,
+                };
+            }
+
+            res.status(200).json(results);
         } catch (err) {
+            console.log(err);
             res.status(400).json({ msg: 'Product not found' });
-        }
-    },
-    prodProba: async (req, res) => {
-        if ((await authorize(req, res)) === true) {
-            const prod = await sql.runQuery(`SELECT * FROM Products`);
-            res.status(200).json({
-                barcode: prod.recordset[0].Barcode,
-            });
         }
     },
     //To get all shops
@@ -224,10 +259,63 @@ module.exports = {
                 const authHeader = req.headers['authorization'];
                 const token = authHeader && authHeader.split(' ')[1];
                 const userID = parseJwt(token).userId;
-                const list = (await sql.runQuery(`SELECT * FROM List WHERE UserID = ${userID}`)).recordset;
-                res.status(200).json(JSON.parse(JSON.stringify(list)));
+
+                let results = [];
+                const list = (
+                    await sql.runQuery(
+                        `SELECT l.*, p.ImageLink, p.Name FROM List l JOIN Products p ON l.Barcode = p.Barcode WHERE UserID = '${userID}'`
+                    )
+                ).recordset;
+                const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
+
+                for (let element of list) {
+                    let prices = [];
+                    let details = (
+                        await sql.runQuery(
+                            `SELECT d.*, s.ShopName FROM Details d JOIN Shop s on d.ShopID=s.ShopID WHERE d.Barcode='${element.Barcode}'`
+                        )
+                    ).recordset;
+                    let availableShops = [];
+                    //add available shops
+                    for (let detail of details) {
+                        prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID, Discount: detail.Discount });
+                        availableShops.push(detail.ShopName);
+                    }
+                    //add unavailable shops with price 0
+                    for (let shop of shops) {
+                        if (!availableShops.includes(shop.ShopName)) {
+                            prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: false });
+                        }
+                    }
+                    //Set the current price instead of shop's price
+                    for (let price of prices) {
+                        if (element.ShopID == price.ShopID) {
+                            price.Price = element.CurrentPrice;
+                        }
+                    }
+
+                    //check if product is favourited
+                    let favourited = true;
+                    const result = await sql.runQuery(`SELECT * FROM Favourites WHERE Barcode=${element.Barcode[1]} AND UserID=${userID}`);
+                    if (result.rowsAffected == 0) {
+                        favourited = false;
+                    }
+                    results.push({
+                        Barcode: element.Barcode,
+                        Name: element.Name,
+                        ImageLink: element.ImageLink,
+                        Favourite: favourited,
+                        InCart: element.InCart,
+                        ShopID: element.ShopID,
+                        Pieces: element.Quantity,
+                        Price: prices,
+                    });
+                }
+
+                res.status(200).json(results);
             }
         } catch (err) {
+            console.log(err);
             res.status(400).json({ msg: err });
         }
     },
@@ -264,6 +352,98 @@ module.exports = {
                 res.sendStatus(200);
             }
         } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+
+    addToFavourites: async (req, res) => {
+        try {
+            //get userid
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+
+                //check if userid/product already favourited
+                const result = await sql.runQuery(`SELECT * FROM Favourites WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+
+                if (result.rowsAffected == 0) {
+                    await sql.runQuery(`INSERT INTO Favourites(UserID, Barcode) 
+                    VALUES('${userID}', '${req.body.Barcode}')`);
+                    res.status(200).json({ msg: 'Product added to favourites successfully' });
+                } else {
+                    res.status(409).json({ msg: 'Product already on favourites list' });
+                }
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+    removeFromFavourites: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+
+                //check if there is anything to delete
+                const result = await sql.runQuery(`SELECT * FROM Favourites WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+                if (result.rowsAffected == 0) {
+                    res.status(400).json({ msg: 'User does not have the product favourited' });
+                } else {
+                    await sql.runQuery(`DELETE FROM Favourites WHERE UserID = '${userID}' AND Barcode = '${req.body.Barcode}'`);
+                    res.status(200).json({ msg: 'Product removed from favourites successfully' });
+                }
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+
+    getFavourites: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+
+                //Get favorites
+                const favourites = (await sql.runQuery(`SELECT * FROM Favourites f JOIN Products p ON f.Barcode=p.Barcode WHERE f.UserID=${userID}`))
+                    .recordset;
+                const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
+
+                let results = [];
+                for (let favourite of favourites) {
+                    let prices = [];
+                    let availableShops = [];
+                    let details = (
+                        await sql.runQuery(`SELECT * FROM Details d JOIN Shop s on d.ShopID=s.ShopID WHERE d.Barcode=${favourite.Barcode[1]}`)
+                    ).recordset;
+
+                    //add available shops
+                    for (let detail of details) {
+                        prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID[1], Discount: detail.Discount });
+                        availableShops.push(detail.ShopName);
+                    }
+                    //add unavailable shops with price 0
+                    for (let shop of shops) {
+                        if (!availableShops.includes(shop.ShopName)) {
+                            prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 });
+                        }
+                    }
+                    //add everything to final list
+                    results.push({
+                        Barcode: favourite.Barcode[1],
+                        Name: favourite.Name,
+                        ImageLink: favourite.ImageLink,
+                        Favourite: true,
+                        Price: prices,
+                    });
+                }
+                res.status(200).json(results);
+            }
+        } catch (err) {
+            console.log(err);
             res.status(400).json({ msg: err });
         }
     },

@@ -10,15 +10,7 @@ router.post(
         controller.registration(req, res);
     }
 );
-router.get(
-    '/proba',
-    (req, res, next) => {
-        next();
-    },
-    (req, res) => {
-        controller.prodProba(req, res);
-    }
-);
+
 router.get(
     '/shops',
     (req, res, next) => {
@@ -35,6 +27,15 @@ router.get(
     },
     (req, res) => {
         controller.getList(req, res);
+    }
+);
+router.get(
+    '/favourites',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getFavourites(req, res);
     }
 );
 
@@ -109,6 +110,24 @@ router.delete(
     },
     (req, res) => {
         controller.removeFromList(req, res);
+    }
+);
+router.post(
+    '/favourites/add',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.addToFavourites(req, res);
+    }
+);
+router.delete(
+    '/favourites/remove',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.removeFromFavourites(req, res);
     }
 );
 
