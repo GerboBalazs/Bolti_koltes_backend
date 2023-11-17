@@ -269,41 +269,53 @@ module.exports = {
                 const userID = parseJwt(token).userId;
 
                 let results = [];
-                const list = (await sql.runQuery(`SELECT * FROM List l JOIN Products p ON l.Barcode = p.Barcode WHERE UserID = ${userID}`)).recordset;
+                const list = (
+                    await sql.runQuery(
+                        `SELECT l.*, p.ImageLink, p.Name FROM List l JOIN Products p ON l.Barcode = p.Barcode WHERE UserID = '${userID}'`
+                    )
+                ).recordset;
                 const shops = (await sql.runQuery(`SELECT * FROM Shop`)).recordset;
 
                 for (let element of list) {
                     let prices = [];
                     let details = (
-                        await sql.runQuery(`SELECT * FROM Details d JOIN Shop s on d.ShopID=s.ShopID WHERE d.Barcode=${element.Barcode[1]}`)
+                        await sql.runQuery(
+                            `SELECT d.*, s.ShopName FROM Details d JOIN Shop s on d.ShopID=s.ShopID WHERE d.Barcode='${element.Barcode}'`
+                        )
                     ).recordset;
                     let availableShops = [];
                     //add available shops
                     for (let detail of details) {
-                        prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID[1], Discount: detail.Discount });
+                        prices.push({ ShopName: detail.ShopName, Price: detail.Price, ShopID: detail.ShopID, Discount: detail.Discount });
                         availableShops.push(detail.ShopName);
                     }
                     //add unavailable shops with price 0
                     for (let shop of shops) {
                         if (!availableShops.includes(shop.ShopName)) {
-                            prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 });
+                            prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: false });
                         }
                     }
+                    //Set the current price instead of shop's price
+                    for (let price of prices) {
+                        if (element.ShopID == price.ShopID) {
+                            price.Price = element.CurrentPrice;
+                        }
+                    }
+
                     //check if product is favourited
                     let favourited = true;
                     const result = await sql.runQuery(`SELECT * FROM Favourites WHERE Barcode=${element.Barcode[1]} AND UserID=${userID}`);
                     if (result.rowsAffected == 0) {
                         favourited = false;
                     }
-
                     results.push({
-                        Barcode: element.Barcode[1],
+                        Barcode: element.Barcode,
                         Name: element.Name,
                         ImageLink: element.ImageLink,
                         Favourite: favourited,
                         InCart: element.InCart,
                         ShopID: element.ShopID,
-                        CurrentPrice: element.CurrentPrice,
+                        Pieces: element.Quantity,
                         Price: prices,
                     });
                 }
