@@ -137,7 +137,7 @@ module.exports = {
                     Barcode: product[0].Barcode,
                     Name: product[0].Name,
                     ImageLink: product[0].ImageLink,
-                    Favourited: favourited,
+                    Favourite: favourited,
                     Price: prices,
                  });
             }
@@ -271,7 +271,7 @@ module.exports = {
                         Barcode: element.Barcode[1],
                         Name: element.Name,
                         ImageLink: element.ImageLink,
-                        Favourited: favourited,
+                        Favourite: favourited,
                         InCart: element.InCart,
                         ShopID: element.ShopID,
                         CurrentPrice: element.CurrentPrice,
