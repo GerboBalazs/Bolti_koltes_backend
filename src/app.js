@@ -4,15 +4,6 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const sql = require('./sql');
 
-// const connect = async () => {
-//     try {
-//         await mssql.connect(config);
-//         console.log('Connection with Database established');
-//     } catch (err) {
-//         console.log(err);
-//     }
-// };
-
 sql.initialConnection();
 
 const Routes = require('./api/routes/routes');

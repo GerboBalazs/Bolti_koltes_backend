@@ -176,14 +176,6 @@ module.exports = {
             res.status(400).json({ msg: 'Product not found' });
         }
     },
-    prodProba: async (req, res) => {
-        if ((await authorize(req, res)) === true) {
-            const prod = await sql.runQuery(`SELECT * FROM Products`);
-            res.status(200).json({
-                barcode: prod.recordset[0].Barcode,
-            });
-        }
-    },
     //To get all shops
     getShops: async (req, res) => {
         try {

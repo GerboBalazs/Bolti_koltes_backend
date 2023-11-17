@@ -10,15 +10,7 @@ router.post(
         controller.registration(req, res);
     }
 );
-router.get(
-    '/proba',
-    (req, res, next) => {
-        next();
-    },
-    (req, res) => {
-        controller.prodProba(req, res);
-    }
-);
+
 router.get(
     '/shops',
     (req, res, next) => {
@@ -138,6 +130,5 @@ router.delete(
         controller.removeFromFavourites(req, res);
     }
 );
-
 
 module.exports = router;
