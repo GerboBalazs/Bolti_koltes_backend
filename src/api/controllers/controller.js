@@ -17,6 +17,22 @@ async function authorize(req, res) {
         return resolv(true);
     });
 }
+async function isLoggedIn(req, res) {
+    return new Promise(function (resolv) {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+        if (token == null || token == 'null') return resolv(false);
+        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err) => {
+            if (err) {
+                //res.status(403).send({ msg: 'Token is invalid!' });
+                return resolv(false);
+            }
+        });
+        return resolv(true);
+    });
+}
+
+
 //To generate token
 function generateAccessToken(user) {
     return jwt.sign({ email: user.email, userId: user.userId }, process.env.ACCESS_TOKEN_SECRET, {
@@ -102,10 +118,7 @@ module.exports = {
     //To get products by barcode
     getProduct: async (req, res) => {
         try {
-            if (await authorize(req, res)) {
-                const authHeader = req.headers['authorization'];
-                const token = authHeader && authHeader.split(' ')[1];
-                const userID = parseJwt(token).userId;
+            
                 //Get the right product
                 const product = (
                     await sql.runQuery(
@@ -127,21 +140,43 @@ module.exports = {
                         prices.push({ ShopName: shop.ShopName, Price: 0, ShopID: shop.ShopID, Discount: 0 });
                     }
                 }
+
+                let results = [];
+                
+
                 //check if product is favourited
-                let favourited = true;
-                const result = (await sql.runQuery(`SELECT * FROM Favourites WHERE Barcode=${req.params.productID} AND UserID=${userID}`));
-                if (result.rowsAffected == 0) {
-                    favourited = false;
+                if (await isLoggedIn(req,res)){
+                    if (await authorize(req, res)) {
+                        const authHeader = req.headers['authorization'];
+                        const token = authHeader && authHeader.split(' ')[1];
+                        const userID = parseJwt(token).userId;
+
+                        let favourited = true;
+                        const result = (await sql.runQuery(`SELECT * FROM Favourites WHERE Barcode=${req.params.productID} AND UserID=${userID}`));
+                        if (result.rowsAffected == 0) {
+                            favourited = false;
+                        }
+                        results.push({
+                            Barcode: product[0].Barcode,
+                            Name: product[0].Name,
+                            ImageLink: product[0].ImageLink,
+                            Favourite: favourited,
+                            Price: prices,
+                        })
+                    }
+                } else {
+                    results.push({
+                        Barcode: product[0].Barcode,
+                        Name: product[0].Name,
+                        ImageLink: product[0].ImageLink,
+                        Price: prices,
+                     })
                 }
-                res.status(200).json({
-                    Barcode: product[0].Barcode,
-                    Name: product[0].Name,
-                    ImageLink: product[0].ImageLink,
-                    Favourite: favourited,
-                    Price: prices,
-                 });
-            }
+
+                res.status(200).json(results);
+            
         } catch (err) {
+            console.log(err);
             res.status(400).json({ msg: 'Product not found' });
         }
     },
