@@ -371,6 +371,8 @@ module.exports = {
                     await sql.runQuery(`INSERT INTO Favourites(UserID, Barcode) 
                     VALUES('${userID}', '${req.body.Barcode}')`);
                     res.status(200).json({ msg: 'Product added to favourites successfully' });
+                } else {
+                    res.status(409).json({ msg: 'Product already on favourites list' });
                 }
             }
         } catch (err) {
