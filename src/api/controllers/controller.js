@@ -141,8 +141,7 @@ module.exports = {
                     }
                 }
 
-                let results = [];
-                
+                let results;
 
                 //check if product is favourited
                 if (await isLoggedIn(req,res)){
@@ -156,7 +155,7 @@ module.exports = {
                         if (result.rowsAffected == 0) {
                             favourited = false;
                         }
-                        results.push({
+                        results = ({
                             Barcode: product[0].Barcode,
                             Name: product[0].Name,
                             ImageLink: product[0].ImageLink,
@@ -165,7 +164,7 @@ module.exports = {
                         })
                     }
                 } else {
-                    results.push({
+                    results = ({
                         Barcode: product[0].Barcode,
                         Name: product[0].Name,
                         ImageLink: product[0].ImageLink,
