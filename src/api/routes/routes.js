@@ -130,5 +130,23 @@ router.delete(
         controller.removeFromFavourites(req, res);
     }
 );
+router.get(
+    '/categories/:ShopID',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getCategories(req, res);
+    }
+);
+router.get(
+    '/products/:SubCategoryID',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getProductWithSubCategory(req, res);
+    }
+);
 
 module.exports = router;
