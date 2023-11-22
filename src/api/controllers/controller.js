@@ -166,6 +166,7 @@ module.exports = {
                     Barcode: product[0].Barcode,
                     Name: product[0].Name,
                     ImageLink: product[0].ImageLink,
+                    Favourite: false,
                     Price: prices,
                 };
             }
