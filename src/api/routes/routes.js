@@ -148,5 +148,14 @@ router.get(
         controller.getProductWithSubCategory(req, res);
     }
 );
+router.post(
+    '/history',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.addToHistory(req, res);
+    }
+);
 
 module.exports = router;
