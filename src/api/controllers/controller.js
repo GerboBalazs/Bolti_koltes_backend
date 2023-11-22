@@ -253,6 +253,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for get user's saved shopping list
     getList: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -339,6 +340,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //Log out the user
     logout: async (req, res) => {
         try {
             //Check if refresh token exsisting in the database
@@ -354,7 +356,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
-
+    //This endpoint is for add product to user's favourite products list
     addToFavourites: async (req, res) => {
         try {
             //get userid
@@ -378,6 +380,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for remove product to user's favourite products list
     removeFromFavourites: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -398,7 +401,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
-
+    //This endpoint is for get the user's favourite products list
     getFavourites: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -445,6 +448,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint to get main and subcategories for categorical search
     getCategories: async (req, res) => {
         try {
             let result = [];
@@ -472,6 +476,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for get all product in 1 subcategory
     getProductWithSubCategory: async (req, res) => {
         try {
             const neededProduct = await sql.runQuery(
@@ -487,6 +492,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for when user finished the shopping save the purchased items in the database
     addToHistory: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -513,6 +519,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for get user's shopping histories
     getPurchases: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -536,6 +543,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for get all details about 1 specific shopping
     getPurchaseDetails: async (req, res) => {
         try {
             if (await authorize(req, res)) {
