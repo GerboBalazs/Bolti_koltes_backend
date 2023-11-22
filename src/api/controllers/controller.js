@@ -330,7 +330,6 @@ module.exports = {
                     .recordset[0].InCart;
                 inCartValue = !inCartValue;
                 //convert bool to 1 or 0
-                //nemtom miért boolt ad vissza az sql ha csak 1/0-t fogad el
                 inCartValue = inCartValue ? 1 : 0;
 
                 await sql.runQuery(`UPDATE List SET InCart = ${inCartValue} WHERE Barcode = ${req.body.Barcode} AND UserID = ${userID}`);
@@ -508,9 +507,50 @@ module.exports = {
                         `INSERT INTO History (PurchaseID, Barcode,UserID, Date, Quantity, CurrentPrice, ShopID) VALUES ('${purchaseID}','${element.Barcode}','${userID}',GETDATE(),'${element.Quantity}','${element.Price}','${element.ShopID}')`
                     );
                 }
+                res.status(200).json({ msg: 'Purchase is saved' });
             }
-            res.status(200).json({ msg: 'Purchase is saved' });
         } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+    getPurchases: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                let purchases = (
+                    await sql.runQuery(
+                        `SELECT PurchaseID, SUM(CurrentPrice)AS OverallPrice, MAX([Date]) AS Date  FROM History  WHERE UserID='${userID}' GROUP BY PurchaseID`
+                    )
+                ).recordset;
+                for (let purchase of purchases) {
+                    //  purchase.Date = purchase.Date.substring(0, 10);
+                    purchase.Date = purchase.Date.toISOString().substring(0, 10).replaceAll('/', '-');
+                }
+
+                res.status(200).json(purchases);
+            }
+        } catch (err) {
+            console.log(err);
+            res.status(400).json({ msg: err });
+        }
+    },
+    getPurchaseDetails: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                const details = (
+                    await sql.runQuery(
+                        `SELECT p.Barcode, p.Name, p.ImageLink, h.CurrentPrice FROM History h JOIN Products p ON h.Barcode = p.Barcode WHERE PurchaseID = '${req.params.purchaseID}' AND UserID='${userID}'`
+                    )
+                ).recordset;
+                res.status(200).json(details);
+            }
+        } catch (err) {
+            console.log(err);
             res.status(400).json({ msg: err });
         }
     },
