@@ -502,7 +502,6 @@ module.exports = {
                 } else {
                     purchaseID = purchaseID.recordset[0].PurchaseID + 1;
                 }
-                console.log(purchaseID);
                 //Insert the products to history table
                 for (let element of req.body) {
                     await sql.runQuery(
