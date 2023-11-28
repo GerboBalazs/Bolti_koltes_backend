@@ -562,6 +562,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for get all discount types with all parameters
     getDiscounts: async (req, res) => {
         try {
             const discounts = (await sql.runQuery(`SELECT * FROM discounts`)).recordset;
