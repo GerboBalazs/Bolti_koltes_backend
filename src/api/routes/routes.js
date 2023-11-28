@@ -148,5 +148,32 @@ router.get(
         controller.getProductWithSubCategory(req, res);
     }
 );
+router.post(
+    '/history',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.addToHistory(req, res);
+    }
+);
+router.get(
+    '/history/purchases',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getPurchases(req, res);
+    }
+);
+router.get(
+    '/history/purchases/:purchaseID',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getPurchaseDetails(req, res);
+    }
+);
 
 module.exports = router;

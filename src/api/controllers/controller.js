@@ -173,7 +173,6 @@ module.exports = {
 
             res.status(200).json(results);
         } catch (err) {
-            console.log(err);
             res.status(400).json({ msg: 'Product not found' });
         }
     },
@@ -254,6 +253,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for get user's saved shopping list
     getList: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -331,7 +331,6 @@ module.exports = {
                     .recordset[0].InCart;
                 inCartValue = !inCartValue;
                 //convert bool to 1 or 0
-                //nemtom miért boolt ad vissza az sql ha csak 1/0-t fogad el
                 inCartValue = inCartValue ? 1 : 0;
 
                 await sql.runQuery(`UPDATE List SET InCart = ${inCartValue} WHERE Barcode = ${req.body.Barcode} AND UserID = ${userID}`);
@@ -341,6 +340,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //Log out the user
     logout: async (req, res) => {
         try {
             //Check if refresh token exsisting in the database
@@ -356,7 +356,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
-
+    //This endpoint is for add product to user's favourite products list
     addToFavourites: async (req, res) => {
         try {
             //get userid
@@ -380,6 +380,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for remove product to user's favourite products list
     removeFromFavourites: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -400,7 +401,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
-
+    //This endpoint is for get the user's favourite products list
     getFavourites: async (req, res) => {
         try {
             if (await authorize(req, res)) {
@@ -447,6 +448,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint to get main and subcategories for categorical search
     getCategories: async (req, res) => {
         try {
             let result = [];
@@ -474,6 +476,7 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    //This endpoint is for get all product in 1 subcategory
     getProductWithSubCategory: async (req, res) => {
         try {
             const neededProduct = await sql.runQuery(
@@ -486,6 +489,76 @@ module.exports = {
 
             res.status(200).json(result);
         } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+    //This endpoint is for when user finished the shopping save the purchased items in the database
+    addToHistory: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+
+                //Get the user's last inserted PurchaseID
+                let purchaseID = await sql.runQuery(`SELECT TOP 1 PurchaseID FROM History WHERE UserID='${userID}' ORDER BY PurchaseID DESC`);
+                if (purchaseID.rowsAffected == 0) {
+                    purchaseID = 1;
+                } else {
+                    purchaseID = purchaseID.recordset[0].PurchaseID + 1;
+                }
+                //Insert the products to history table
+                for (let element of req.body) {
+                    await sql.runQuery(
+                        `INSERT INTO History (PurchaseID, Barcode,UserID, Date, Quantity, CurrentPrice, ShopID) VALUES ('${purchaseID}','${element.Barcode}','${userID}',GETDATE(),'${element.Quantity}','${element.Price}','${element.ShopID}')`
+                    );
+                }
+                res.status(200).json({ msg: 'Purchase is saved' });
+            }
+        } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
+    //This endpoint is for get user's shopping histories
+    getPurchases: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                let purchases = (
+                    await sql.runQuery(
+                        `SELECT PurchaseID, SUM(CurrentPrice)AS OverallPrice, MAX([Date]) AS Date  FROM History  WHERE UserID='${userID}' GROUP BY PurchaseID`
+                    )
+                ).recordset;
+                for (let purchase of purchases) {
+                    //  purchase.Date = purchase.Date.substring(0, 10);
+                    purchase.Date = purchase.Date.toISOString().substring(0, 10).replaceAll('/', '-');
+                }
+
+                res.status(200).json(purchases);
+            }
+        } catch (err) {
+            console.log(err);
+            res.status(400).json({ msg: err });
+        }
+    },
+    //This endpoint is for get all details about 1 specific shopping
+    getPurchaseDetails: async (req, res) => {
+        try {
+            if (await authorize(req, res)) {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+                const userID = parseJwt(token).userId;
+                const details = (
+                    await sql.runQuery(
+                        `SELECT p.Barcode, p.Name, p.ImageLink, h.CurrentPrice FROM History h JOIN Products p ON h.Barcode = p.Barcode WHERE PurchaseID = '${req.params.purchaseID}' AND UserID='${userID}'`
+                    )
+                ).recordset;
+                res.status(200).json(details);
+            }
+        } catch (err) {
+            console.log(err);
             res.status(400).json({ msg: err });
         }
     },
