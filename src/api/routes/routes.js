@@ -39,15 +39,6 @@ router.get(
     }
 );
 
-router.get(
-    '/:productID',
-    (req, res, next) => {
-        next();
-    },
-    (req, res) => {
-        controller.getProduct(req, res);
-    }
-);
 router.post(
     '/login',
     (req, res, next) => {
@@ -173,6 +164,24 @@ router.get(
     },
     (req, res) => {
         controller.getPurchaseDetails(req, res);
+    }
+);
+router.get(
+    '/discount',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getDiscounts(req, res);
+    }
+);
+router.get(
+    '/:productID',
+    (req, res, next) => {
+        next();
+    },
+    (req, res) => {
+        controller.getProduct(req, res);
     }
 );
 

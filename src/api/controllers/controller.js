@@ -562,4 +562,12 @@ module.exports = {
             res.status(400).json({ msg: err });
         }
     },
+    getDiscounts: async (req, res) => {
+        try {
+            const discounts = (await sql.runQuery(`SELECT * FROM discounts`)).recordset;
+            res.status(200).json(discounts);
+        } catch (err) {
+            res.status(400).json({ msg: err });
+        }
+    },
 };
