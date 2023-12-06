@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/controller');
+const authenticate = require('../controllers/authenticate');
+const category = require('../controllers/category');
+const discount = require('../controllers/discount');
+const favourite = require('../controllers/favourite');
+const history = require('../controllers/history');
+const list = require('../controllers/list');
+const product = require('../controllers/product');
+const shop = require('../controllers/shop');
+
 router.post(
     '/register',
     (req, res, next) => {
         next();
     },
     (req, res) => {
-        controller.registration(req, res);
+        authenticate.registration(req, res);
     }
 );
 
@@ -17,7 +25,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getShops(req, res);
+        shop.getShops(req, res);
     }
 );
 router.get(
@@ -26,7 +34,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getList(req, res);
+        list.getList(req, res);
     }
 );
 router.get(
@@ -35,7 +43,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getFavourites(req, res);
+        favourite.getFavourites(req, res);
     }
 );
 
@@ -45,7 +53,7 @@ router.post(
         next();
     },
     (req, res) => {
-        controller.authenticate(req, res);
+        authenticate.authenticate(req, res);
     }
 );
 router.delete(
@@ -54,7 +62,7 @@ router.delete(
         next();
     },
     (req, res) => {
-        controller.logout(req, res);
+        authenticate.logout(req, res);
     }
 );
 router.post(
@@ -63,7 +71,7 @@ router.post(
         next();
     },
     (req, res) => {
-        controller.refreshToken(req, res);
+        authenticate.refreshToken(req, res);
     }
 );
 router.post(
@@ -72,7 +80,7 @@ router.post(
         next();
     },
     (req, res) => {
-        controller.modifyProductInList(req, res);
+        list.modifyProductInList(req, res);
     }
 );
 router.post(
@@ -81,17 +89,7 @@ router.post(
         next();
     },
     (req, res) => {
-        controller.addToList(req, res);
-    }
-);
-
-router.post(
-    '/list/toggleInCart',
-    (req, res, next) => {
-        next();
-    },
-    (req, res) => {
-        controller.toggleInCart(req, res);
+        list.addToList(req, res);
     }
 );
 router.delete(
@@ -100,7 +98,7 @@ router.delete(
         next();
     },
     (req, res) => {
-        controller.removeFromList(req, res);
+        list.removeFromList(req, res);
     }
 );
 router.post(
@@ -109,7 +107,7 @@ router.post(
         next();
     },
     (req, res) => {
-        controller.addToFavourites(req, res);
+        favourite.addToFavourites(req, res);
     }
 );
 router.delete(
@@ -118,7 +116,7 @@ router.delete(
         next();
     },
     (req, res) => {
-        controller.removeFromFavourites(req, res);
+        favourite.removeFromFavourites(req, res);
     }
 );
 router.get(
@@ -127,7 +125,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getCategories(req, res);
+        category.getCategories(req, res);
     }
 );
 router.get(
@@ -136,7 +134,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getProductWithSubCategory(req, res);
+        category.getProductWithSubCategory(req, res);
     }
 );
 router.post(
@@ -145,7 +143,7 @@ router.post(
         next();
     },
     (req, res) => {
-        controller.addToHistory(req, res);
+        history.addToHistory(req, res);
     }
 );
 router.get(
@@ -154,7 +152,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getPurchases(req, res);
+        history.getPurchases(req, res);
     }
 );
 router.get(
@@ -163,7 +161,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getPurchaseDetails(req, res);
+        history.getPurchaseDetails(req, res);
     }
 );
 router.get(
@@ -172,7 +170,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getDiscounts(req, res);
+        discount.getDiscounts(req, res);
     }
 );
 router.get(
@@ -181,7 +179,7 @@ router.get(
         next();
     },
     (req, res) => {
-        controller.getProduct(req, res);
+        product.getProduct(req, res);
     }
 );
 
