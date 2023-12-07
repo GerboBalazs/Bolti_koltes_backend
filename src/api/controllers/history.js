@@ -47,7 +47,7 @@ module.exports = {
                 const userID = utility.parseJwt(token).userId;
                 let purchases = (
                     await sql.runQuery(
-                        `SELECT PurchaseID, SUM(CurrentPrice)AS OverallPrice, MAX([Date]) AS Date  FROM History  WHERE UserID='${userID}' GROUP BY PurchaseID`
+                        `SELECT PurchaseID, SUM(CurrentPrice*Quantity)AS OverallPrice, MAX([Date]) AS Date  FROM History  WHERE UserID='${userID}' GROUP BY PurchaseID`
                     )
                 ).recordset;
                 for (let purchase of purchases) {
